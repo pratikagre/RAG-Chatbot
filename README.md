@@ -117,8 +117,8 @@ rag-agentic-ai/
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/<your-username>/rag-agentic-ai.git
-cd rag-agentic-ai
+git clone https://github.com/pratikagre/RAG-Chatbot.git
+cd RAG-Chatbot
 ```
 
 ### Step 2: Create and Activate Virtual Environment
@@ -257,21 +257,8 @@ Every API response and UI interaction strictly adheres to the requested JSON sch
 
 ---
 
-## 10. Public GitHub Repository Deployment
+## 10. Repository Link
 
-To publish this codebase to your public GitHub repository:
+- **Public GitHub Repository**: [https://github.com/pratikagre/RAG-Chatbot](https://github.com/pratikagre/RAG-Chatbot)
+- **Clone URL**: `git clone https://github.com/pratikagre/RAG-Chatbot.git`
 
-```bash
-# 1. Stage all project files
-git add .
-
-# 2. Commit the codebase
-git commit -m "feat: complete production LangGraph & Pinecone RAG chatbot with FastAPI and Streamlit"
-
-# 3. Add your remote GitHub repository
-git remote add origin https://github.com/<your-username>/rag-agentic-ai.git
-
-# 4. Push to main/master branch
-git branch -M main
-git push -u origin main
-```
