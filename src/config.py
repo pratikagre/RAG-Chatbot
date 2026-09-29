@@ -6,6 +6,16 @@ from dotenv import load_dotenv
 # Load environment variables from .env if present
 load_dotenv()
 
+# Seamlessly bridge Streamlit Community Cloud secrets to environment variables
+try:
+    import streamlit as st
+    if hasattr(st, "secrets"):
+        for k, v in st.secrets.items():
+            if isinstance(v, (str, int, float)) and k not in os.environ:
+                os.environ[k] = str(v)
+except Exception:
+    pass
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 class Settings(BaseSettings):
