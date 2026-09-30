@@ -37,18 +37,30 @@ class LocalFallbackVectorStore:
             return []
 
         import re
-        query_words = set(re.findall(r"\w+", query.lower()))
+        stop_words = {
+            "what", "is", "are", "the", "of", "in", "to", "and", "a", "an",
+            "for", "how", "does", "do", "did", "from", "with", "by", "at",
+            "according", "text", "document", "book", "ebook", "mentioned",
+            "outlined", "discussed", "about", "this", "that", "these", "those",
+            "as", "be", "it"
+        }
+        all_words = re.findall(r"\w+", query.lower())
+        filtered = [w for w in all_words if w not in stop_words]
+        query_words = set(filtered if filtered else all_words)
         if not query_words:
             return [(doc, 0.0) for doc in self.documents[:k]]
 
         scored_docs = []
         for doc in self.documents:
             content_lower = doc.page_content.lower()
-            doc_words = set(re.findall(r"\w+", content_lower))
-            overlap = query_words.intersection(doc_words)
-            # Calculate Jaccard / lexical similarity score
-            score = len(overlap) / (len(query_words) + 1e-5)
-            scored_docs.append((doc, float(min(1.0, score))))
+            overlap = [w for w in query_words if w in content_lower]
+            if not overlap:
+                score = 0.0
+            else:
+                coverage = len(overlap) / len(query_words)
+                freq = sum(content_lower.count(w) for w in overlap)
+                score = min(0.95, 0.5 * coverage + 0.05 * min(9, freq))
+            scored_docs.append((doc, float(round(score, 4))))
 
         scored_docs.sort(key=lambda x: x[1], reverse=True)
         return scored_docs[:k]

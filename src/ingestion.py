@@ -56,8 +56,8 @@ def load_and_split_pdf(pdf_path: str) -> List[Document]:
             "page": page_num,
             "char_count": len(chunk.page_content)
         }
-        # Strip extraneous whitespace
-        clean_text = chunk.page_content.strip()
+        # Clean Unicode replacement character and extraneous whitespace
+        clean_text = chunk.page_content.replace("\ufffd", "'").replace("\x00", "").strip()
         if clean_text:
             processed_chunks.append(Document(page_content=clean_text, metadata=enriched_metadata))
 

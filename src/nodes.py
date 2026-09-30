@@ -90,7 +90,14 @@ def generate_node(state: AgentState) -> Dict[str, Any]:
     """
     question = state["question"]
     context_chunks = state.get("context", [])
-    llm = get_llm()
+    # Conversational greeting check
+    greetings = {"hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening"}
+    q_norm = re.sub(r"[^\w\s]", "", question.strip().lower())
+    if q_norm in greetings:
+        return {
+            "final_answer": "Hello! I am your AI assistant specialized strictly in the **Agentic AI eBook**. You can ask me any question about the eBook, such as definitions of Agentic AI, system architectures, multi-agent workflows, industry use cases, or comparison with traditional LLMs!",
+            "is_refusal": False
+        }
 
     # Pre-check for empty context
     if not context_chunks:
@@ -103,6 +110,7 @@ def generate_node(state: AgentState) -> Dict[str, Any]:
         f"[Context Chunk {i+1}]:\n{chunk}" for i, chunk in enumerate(context_chunks)
     )
 
+    llm = get_llm()
     if llm:
         try:
             prompt = STRICT_RAG_PROMPT.format(
@@ -111,7 +119,8 @@ def generate_node(state: AgentState) -> Dict[str, Any]:
             )
             response = llm.invoke(prompt)
             answer_text = response.content if hasattr(response, "content") else str(response)
-            return {"final_answer": answer_text.strip()}
+            clean_answer = answer_text.replace("\ufffd", "'").strip()
+            return {"final_answer": clean_answer}
         except Exception as e:
             logger.error(f"Error calling LLM: {e}. Falling back to rule-based generation.")
 
@@ -132,7 +141,8 @@ def generate_node(state: AgentState) -> Dict[str, Any]:
     # Clean up and present most relevant paragraph
     paragraphs = [p.strip() for p in primary_chunk.split("\n\n") if len(p.strip()) > 30]
     lead_paragraph = paragraphs[0] if paragraphs else primary_chunk[:400]
-    answer = f"Based on the Agentic AI eBook:\n\n{lead_paragraph}"
+    clean_lead = lead_paragraph.replace("\ufffd", "'").replace("\x00", "").strip()
+    answer = f"Based on the Agentic AI eBook:\n\n{clean_lead}"
     return {"final_answer": answer, "is_refusal": False}
 
 
@@ -145,6 +155,14 @@ def evaluate_groundedness_node(state: AgentState) -> Dict[str, Any]:
     final_answer = state.get("final_answer", "")
     context_chunks = state.get("context", [])
     context_metadata = state.get("context_metadata", [])
+
+    # Check for greeting message
+    if "hello! i am your ai assistant" in final_answer.lower():
+        return {
+            "confidence_score": 1.0,
+            "grounded": True,
+            "is_refusal": False
+        }
 
     refusal_markers = [
         "cannot answer this question based on the provided",
