@@ -50,16 +50,22 @@ def retrieve_node(state: AgentState) -> Dict[str, Any]:
 
     vectorstore = get_vector_store()
     
-    # Retrieve with relevance scores if available
+    # Retrieve with relevance scores from vector store or fallback
     try:
         scored_results = vectorstore.similarity_search_with_relevance_scores(
             question, k=settings.TOP_K
         )
     except Exception as e:
-        logger.warning(f"similarity_search_with_relevance_scores failed ({e}), using as_retriever")
-        retriever = vectorstore.as_retriever(search_kwargs={"k": settings.TOP_K})
-        docs = retriever.invoke(question)
-        scored_results = [(doc, 0.85) for doc in docs]
+        logger.warning(f"Vector search failed ({e}). Falling back to local document store.")
+        from src.vectorstore import LocalFallbackVectorStore
+        import src.vectorstore as vs_module
+        from src.ingestion import load_and_split_pdf
+        if vs_module._local_store_cache is None:
+            chunks = load_and_split_pdf(settings.PDF_PATH)
+            vs_module._local_store_cache = LocalFallbackVectorStore(chunks)
+        scored_results = vs_module._local_store_cache.similarity_search_with_relevance_scores(
+            question, k=settings.TOP_K
+        )
 
     context_chunks: List[str] = []
     metadata_list: List[Dict[str, Any]] = []
